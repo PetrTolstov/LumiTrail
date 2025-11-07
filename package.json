@@ -1,0 +1,43 @@
+{
+  "name": "lumitrail",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "start": "nuxt start",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "prisma:generate": "prisma generate --schema=src/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=src/prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=src/prisma/schema.prisma",
+    "db:seed": "prisma db seed --schema=src/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@auth/core": "^0.34.3",
+    "@auth/prisma-adapter": "^2.11.1",
+    "@mdi/font": "^7.4.47",
+    "@nuxtjs/i18n": "^10.2.0",
+    "@pinia/nuxt": "^0.11.2",
+    "@prisma/client": "^6.18.0",
+    "@vueuse/motion": "^3.0.3",
+    "formidable": "^3.5.4",
+    "nuxt": "^4.2.0",
+    "nuxt-auth-utils": "^0.5.25",
+    "oslo": "^1.2.1",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3",
+    "vuetify": "^3.10.8",
+    "zod": "^4.1.12"
+  },
+  "prisma": {
+    "seed": "tsx src/prisma/seed.ts"
+  },
+  "devDependencies": {
+    "@types/formidable": "^3.4.6",
+    "prisma": "^6.18.0",
+    "tsx": "^4.20.6",
+    "vue-tsc": "^3.1.2"
+  }
+}
