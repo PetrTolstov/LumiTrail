@@ -25,3 +25,4 @@ logs
 
 uploads
 src/prisma/prisma/dev.db
+package-lock.json

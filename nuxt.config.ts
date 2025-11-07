@@ -29,6 +29,7 @@ export default defineNuxtConfig({
   serverDir: resolve('src/server'),
   nitro: {
     scanDirs: [resolve('src/server')],
+    preset: 'vercel',
     storage: {
       uploads: { driver: 'fs', base: resolve('./uploads') }
     }
