@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "nuxt dev",
-    "build": "nuxt build --output public",
+    "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "postinstall": "prisma generate --schema=src/prisma/schema.prisma && nuxt prepare",
     "prisma:generate": "prisma generate --schema=src/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema=src/prisma/schema.prisma",
     "prisma:studio": "prisma studio --schema=src/prisma/schema.prisma",
