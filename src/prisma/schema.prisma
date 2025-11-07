@@ -3,8 +3,158 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String          @id @default(cuid())
+  email            String          @unique
+  passwordHash     String
+  role             Role
+  displayName      String?
+  xpTotal          Int             @default(0)
+  createdAt        DateTime        @default(now())
+  accounts         Account[]
+  lessonAttempts   LessonAttempt[]
+  reviewedAttempts LessonAttempt[] @relation("Reviewer")
+  programs         Program[]       @relation("ProgramOwner")
+  programMembers   ProgramMember[]
+  sessions         Session[]
+  xpLedger         XpLedger[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Program {
+  id             String          @id @default(cuid())
+  ownerId        String
+  title          String
+  description    String?
+  createdAt      DateTime        @default(now())
+  lessons        Lesson[]
+  owner          User            @relation("ProgramOwner", fields: [ownerId], references: [id])
+  programMembers ProgramMember[]
+}
+
+model ProgramMember {
+  id        String  @id @default(cuid())
+  programId String
+  childId   String
+  child     User    @relation(fields: [childId], references: [id])
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, childId])
+}
+
+model Lesson {
+  id                   String          @id @default(cuid())
+  programId            String
+  title                String
+  description          String?
+  orderIndex           Int
+  prerequisiteLessonId String?
+  createdAt            DateTime        @default(now())
+  prerequisiteLesson   Lesson?         @relation("LessonPrereq", fields: [prerequisiteLessonId], references: [id])
+  dependentLessons     Lesson[]        @relation("LessonPrereq")
+  program              Program         @relation(fields: [programId], references: [id], onDelete: Cascade)
+  lessonAttempts       LessonAttempt[]
+  tasks                Task[]
+
+  @@index([programId, orderIndex])
+}
+
+model Task {
+  id             String       @id @default(cuid())
+  lessonId       String
+  promptText     String?
+  promptImageUrl String?
+  answerType     AnswerType
+  orderIndex     Int
+  lesson         Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  taskAnswers    TaskAnswer[]
+  options        TaskOption[]
+
+  @@index([lessonId, orderIndex])
+}
+
+model TaskOption {
+  id          String       @id @default(cuid())
+  taskId      String
+  label       String
+  isCorrect   Boolean
+  taskAnswers TaskAnswer[]
+  task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model LessonAttempt {
+  id          String        @id @default(cuid())
+  lessonId    String
+  childId     String
+  status      AttemptStatus
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  awardedXp   Int           @default(0)
+  child       User          @relation(fields: [childId], references: [id])
+  lesson      Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  reviewer    User?         @relation("Reviewer", fields: [reviewedBy], references: [id])
+  taskAnswers TaskAnswer[]
+
+  @@index([childId, lessonId])
+}
+
+model TaskAnswer {
+  id               String        @id @default(cuid())
+  attemptId        String
+  taskId           String
+  answerText       String?
+  selectedOptionId String?
+  fileUrl          String?
+  attempt          LessonAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  selectedOption   TaskOption?   @relation(fields: [selectedOptionId], references: [id])
+  task             Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model XpLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  source    String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 enum Role {
@@ -24,148 +174,4 @@ enum AnswerType {
   text
   choices
   file
-}
-
-model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  passwordHash   String
-  role           Role
-  displayName    String?
-  xpTotal        Int      @default(0)
-  createdAt      DateTime @default(now())
-  accounts       Account[]
-  sessions       Session[]
-  programs       Program[]      @relation("ProgramOwner")
-  programMembers ProgramMember[]
-  lessonAttempts LessonAttempt[]
-  reviewedAttempts LessonAttempt[] @relation("Reviewer")
-  xpLedger       XpLedger[]
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-  @@unique([identifier, token])
-}
-
-model Program {
-  id            String   @id @default(cuid())
-  ownerId       String
-  owner         User     @relation("ProgramOwner", fields: [ownerId], references: [id])
-  title         String
-  description   String?
-  createdAt     DateTime @default(now())
-  lessons       Lesson[]
-  programMembers ProgramMember[]
-}
-
-model ProgramMember {
-  id        String  @id @default(cuid())
-  programId String
-  childId   String
-  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
-  child     User    @relation(fields: [childId], references: [id])
-  @@unique([programId, childId])
-}
-
-model Lesson {
-  id                     String   @id @default(cuid())
-  programId              String
-  program                Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
-  title                  String
-  description            String?
-  orderIndex             Int
-  prerequisiteLessonId   String?
-  prerequisiteLesson     Lesson?  @relation("LessonPrereq", fields: [prerequisiteLessonId], references: [id], onDelete: SetNull)
-  dependentLessons       Lesson[] @relation("LessonPrereq")
-  createdAt              DateTime @default(now())
-  tasks                  Task[]
-  lessonAttempts         LessonAttempt[]
-  @@index([programId, orderIndex])
-}
-
-model Task {
-  id             String   @id @default(cuid())
-  lessonId       String
-  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  promptText     String?
-  promptImageUrl String?
-  answerType     AnswerType
-  orderIndex     Int
-  options        TaskOption[]
-  taskAnswers    TaskAnswer[]
-  @@index([lessonId, orderIndex])
-}
-
-model TaskOption {
-  id         String @id @default(cuid())
-  taskId     String
-  task       Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  label      String
-  isCorrect  Boolean
-  taskAnswers TaskAnswer[]
-}
-
-model LessonAttempt {
-  id          String        @id @default(cuid())
-  lessonId    String
-  lesson      Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  childId     String
-  child       User          @relation(fields: [childId], references: [id])
-  status      AttemptStatus
-  submittedAt DateTime?
-  reviewedAt  DateTime?
-  reviewedBy  String?
-  reviewer    User?         @relation("Reviewer", fields: [reviewedBy], references: [id])
-  awardedXp   Int           @default(0)
-  taskAnswers TaskAnswer[]
-  @@index([childId, lessonId])
-}
-
-model TaskAnswer {
-  id               String        @id @default(cuid())
-  attemptId        String
-  attempt          LessonAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  taskId           String
-  task             Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  answerText       String?
-  selectedOptionId String?
-  selectedOption   TaskOption?   @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
-  fileUrl          String?
-}
-
-model XpLedger {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  delta     Int
-  source    String?
-  createdAt DateTime @default(now())
 }
