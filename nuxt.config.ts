@@ -30,7 +30,12 @@ export default defineNuxtConfig({
   nitro: {
     scanDirs: [resolve('src/server')],
     preset: 'vercel',
-    externals: { inline: ['@prisma/client', 'prisma'] },
+    externals: {
+      external: ['@prisma/client', 'prisma', '.prisma', '.prisma/*']
+    },
+    rollupConfig: {
+      external: ['.prisma', '.prisma/*']
+    },
     storage: {
       uploads: { driver: 'fs', base: resolve('./uploads') }
     }
